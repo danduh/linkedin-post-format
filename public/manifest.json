@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "My Chrome Extension",
-  "description": "React + Tailwind + Vite Chrome Extension",
-  "version": "1.0",
+  "name": "LN Format",
+  "description": "Formatting posts in LinkedIn",
+  "version": "1.2",
   "action": {
     "default_popup": "index.html",
     "default_icon": "icon.png"
