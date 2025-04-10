@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Post Formatter",
-  "description": "Add beautiful Unicode-based styling (bold, italic, script, etc.) to your LinkedIn posts with a simple toolbar and keyboard shortcuts.",
+  "description": "Add styling (bold, italic, script, etc.) to your LinkedIn posts with a simple toolbar and keyboard shortcuts.",
   "version": "1.2",
   "action": {
     "default_popup": "index.html",

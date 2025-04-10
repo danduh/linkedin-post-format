@@ -30,14 +30,15 @@ export const App: React.FC = () => {
         🚀 Works inside LinkedIn posts
         <div className="mt-1 space-x-2">
           <a
-            href="https://github.com/your-repo"
+            href="https://github.com/danduh/linkedin-post-format"
             target="_blank"
             className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
           >
             GitHub
           </a>
           <a
-            href="mailto:you@example.com"
+            href="https://github.com/danduh/linkedin-post-format/issues/new"
+            target="_blank"
             className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
           >
             Feedback

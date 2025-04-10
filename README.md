@@ -1,54 +1,92 @@
-# React + TypeScript + Vite
+# LinkedIn Post Formatter ✨
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight Chrome Extension that brings beautiful Unicode-based text styling (like **bold**, *italic*, 𝓈𝒸𝓇𝒾𝓅𝓉,
+𝔤𝔬𝔱𝔥𝔦𝔠, etc.) directly to your LinkedIn post editor. Highlight your text, click a button, and instantly format your
+posts without leaving the site.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+<div style="text-align: center;">
+    <img width="70%" src="screenShot.png">
+</div>
 
-## Expanding the ESLint configuration
+## 🚀 Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- ✅ Bold, Italic, Underline, and Strikethrough formatting
+- ✅ 15+ Unicode style variants: script, gothic, fullwidth, circled, etc.
+- ✅ Keyboard shortcuts:
+    - `Cmd/Ctrl + B` → Bold
+    - `Cmd/Ctrl + I` → Italic
+    - `Cmd/Ctrl + U` → Underline
+- ✅ Toolbar injected directly into the LinkedIn composer
+- ✅ Dropdown style picker with **live previews**
+- ✅ Works natively inside LinkedIn with no account or backend
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+---
+
+## 📅 How It Works
+
+1. Install the extension from the Chrome Web Store
+2. Open LinkedIn and start a new post
+3. Highlight any text
+4. Use the toolbar buttons or keyboard shortcuts to format
+5. Your styles are preserved when you post — no HTML, just Unicode!
+
+---
+
+## 🎨 Examples
+
+```
+𝗕𝗼𝗹𝗱 — because you mean business
+𝘪𝘵𝘢𝘭𝘪𝘤 — for soft takes
+𝓈𝒸𝓇𝒾𝓅𝓉 — for elegant drama
+𝖌𝖔𝖙𝖍𝖎𝖈 — because you code at night
+ⓒⓘⓡⓒⓛⓔⓓ — just for fun
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📎 Chrome Web Store
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+> 🔗 [Install from Chrome Web Store](https://chrome.google.com/webstore/detail/linked-post-formatter/your-extension-id)
+
+---
+
+## 💡 Why Unicode?
+
+No HTML, no spans, no custom fonts. Everything is encoded with special Unicode characters, so your formatting survives
+even after LinkedIn strips HTML formatting on publish.
+
+---
+
+## 🌎 Privacy & Permissions
+
+- Does **not** collect or transmit personal data
+- Uses `storage` to remember your last selected style
+- Scripts run **only** on LinkedIn post editors
+- Permissions:
+    - `https://www.linkedin.com/*`
+    - `storage`
+    - `scripting`
+
+---
+
+## 🚀 Development
+
+Clone this repo, then:
+
+```bash
+npm install
+npm run dev
 ```
+
+## 💪 Contributing
+
+Pull requests welcome! If you have ideas for new Unicode styles or features, feel free to open an issue or PR.
+
+---
+
+## 😎 License
+
+MIT
+
