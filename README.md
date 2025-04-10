@@ -48,7 +48,7 @@ posts without leaving the site.
 
 ## 📎 Chrome Web Store
 
-> 🔗 [Install from Chrome Web Store](https://chrome.google.com/webstore/detail/linked-post-formatter/your-extension-id)
+> 🔗 [Install from Chrome Web Store](https://chromewebstore.google.com/detail/emklccaefokniahdcphcfblelldpgblp)
 
 ---
 
