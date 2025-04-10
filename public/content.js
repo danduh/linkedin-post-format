@@ -1,40 +1,39 @@
-(function () {
-    const createMap = (offsetUpper, offsetLower) => {
-        const map = {};
-        for (let i = 65; i <= 90; i++) map[String.fromCharCode(i)] = String.fromCodePoint(offsetUpper + (i - 65));
-        for (let i = 97; i <= 122; i++) map[String.fromCharCode(i)] = String.fromCodePoint(offsetLower + (i - 97));
-        return map;
-    };
+const createMap = (offsetUpper, offsetLower) => {
+    const map = {};
+    for (let i = 65; i <= 90; i++) map[String.fromCharCode(i)] = String.fromCodePoint(offsetUpper + (i - 65));
+    for (let i = 97; i <= 122; i++) map[String.fromCharCode(i)] = String.fromCodePoint(offsetLower + (i - 97));
+    return map;
+};
 
-    const invertMap = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
+const invertMap = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
 
-    const BOLD_MAP = createMap(0x1D400, 0x1D41A);
-    const BOLD_REVERSE = invertMap(BOLD_MAP);
-    const ITALIC_MAP = createMap(0x1D608, 0x1D622);
-    const ITALIC_REVERSE = invertMap(ITALIC_MAP);
+const BOLD_MAP = createMap(0x1D400, 0x1D41A);
+const BOLD_REVERSE = invertMap(BOLD_MAP);
+const ITALIC_MAP = createMap(0x1D608, 0x1D622);
+const ITALIC_REVERSE = invertMap(ITALIC_MAP);
 
-    const COMBINING_UNDERLINE = '\u035F';
-    const COMBINING_STRIKE = '\u0336';
+const COMBINING_UNDERLINE = '\u035F';
+const COMBINING_STRIKE = '\u0336';
 
-    // const underlineText = (str) =>
-    //     str.split('').map(c => c + COMBINING_UNDERLINE).join('');
-    // const strikethroughText = (str) =>
-    //     str.split('').map(c => c + COMBINING_STRIKE).join('');
+// const underlineText = (str) =>
+//     str.split('').map(c => c + COMBINING_UNDERLINE).join('');
+// const strikethroughText = (str) =>
+//     str.split('').map(c => c + COMBINING_STRIKE).join('');
 
-    const toggleText = (str, map, reverseMap) => {
-        const isFormatted = [...str].every(c => reverseMap[c] || c === ' ');
-        return [...str].map(c => (isFormatted ? reverseMap[c] : map[c]) || c).join('');
-    };
+const toggleText = (str, map, reverseMap) => {
+    const isFormatted = [...str].every(c => reverseMap[c] || c === ' ');
+    return [...str].map(c => (isFormatted ? reverseMap[c] : map[c]) || c).join('');
+};
 
-    const toggleCombining = (str, marker) => {
-        const isApplied = str.includes(marker);
-        return isApplied
-            ? str.replaceAll(marker, '')
-            : str.split('').map(c => c + marker).join('');
-    };
+const toggleCombining = (str, marker) => {
+    const isApplied = str.includes(marker);
+    return isApplied
+        ? str.replaceAll(marker, '')
+        : str.split('').map(c => c + marker).join('');
+};
 
-    const style = document.createElement('style');
-    style.innerText = `
+const style = document.createElement('style');
+style.innerText = `
     .linked-toolbar-btn {
     background-color: #e6e6e6;
     color: #1b1b1b;
@@ -60,74 +59,75 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
   `;
-    document.head.appendChild(style);
+document.head.appendChild(style);
 
-    const waitForEditor = setInterval(() => {
-        const editor = document.querySelector('.ql-editor[contenteditable="true"]');
-        if (!editor) return;
+const injectToolbar = (editor) => {
+    if (editor.closest('.linked-toolbar-wrapper')) return; // Prevent duplicate injection
 
-        clearInterval(waitForEditor);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'linked-toolbar-wrapper';
+    wrapper.style.position = 'relative';
 
-        const holder = document.querySelector('.share-creation-state');
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-        wrapper.style.paddingTop = '30px';
-        editor.parentElement.insertBefore(wrapper, editor);
-        wrapper.appendChild(editor);
+    const parent = editor.parentElement;
+    parent.insertBefore(wrapper, editor);
+    wrapper.appendChild(editor);
 
-        const toolbar = document.createElement('div');
-        toolbar.className = 'linked-toolbar';
+    const toolbar = document.createElement('div');
+    toolbar.className = 'linked-toolbar';
 
-        const createBtn = (label, type) => {
-            const btn = document.createElement('button');
-            btn.className = 'linked-toolbar-btn';
-            btn.innerText = label;
-            btn.onclick = () => {
-                const selection = window.getSelection();
-                if (!selection.rangeCount) return;
-                const range = selection.getRangeAt(0);
-                if (!editor.contains(range.commonAncestorContainer)) return;
-                const selectedText = selection.toString();
-                if (!selectedText.trim()) return;
+    const createBtn = (label, type) => {
+        const btn = document.createElement('button');
+        btn.className = 'linked-toolbar-btn';
+        btn.innerText = label;
+        btn.onclick = () => {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            const range = selection.getRangeAt(0);
+            if (!editor.contains(range.commonAncestorContainer)) return;
+            const selectedText = selection.toString();
+            if (!selectedText.trim()) return;
 
-                let result = selectedText;
-                switch (type) {
-                    case 'bold':
-                        result = toggleText(selectedText, BOLD_MAP, BOLD_REVERSE);
-                        break;
-                    case 'italic':
-                        result = toggleText(selectedText, ITALIC_MAP, ITALIC_REVERSE);
-                        break;
-                    case 'underline':
-                        result = toggleCombining(selectedText, COMBINING_UNDERLINE);
-                        break;
-                    case 'strike':
-                        result = toggleCombining(selectedText, COMBINING_STRIKE);
-                        break;
-                }
+            let result = selectedText;
+            switch (type) {
+                case 'bold':
+                    result = toggleText(selectedText, BOLD_MAP, BOLD_REVERSE); break;
+                case 'italic':
+                    result = toggleText(selectedText, ITALIC_MAP, ITALIC_REVERSE); break;
+                case 'underline':
+                    result = toggleCombining(selectedText, COMBINING_UNDERLINE); break;
+                case 'strike':
+                    result = toggleCombining(selectedText, COMBINING_STRIKE); break;
+            }
 
-                range.deleteContents();
-                range.insertNode(document.createTextNode(result));
+            range.deleteContents();
+            range.insertNode(document.createTextNode(result));
 
-                selection.removeAllRanges();
-                const newRange = document.createRange();
-                newRange.setStartAfter(editor.lastChild);
-                newRange.collapse(true);
-                selection.addRange(newRange);
+            selection.removeAllRanges();
+            const newRange = document.createRange();
+            newRange.setStartAfter(editor.lastChild);
+            newRange.collapse(true);
+            selection.addRange(newRange);
 
-                editor.dispatchEvent(new Event('input', {bubbles: true}));
-            };
-            return btn;
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
         };
+        return btn;
+    };
 
-        toolbar.appendChild(createBtn(toggleText('B', BOLD_MAP, BOLD_REVERSE), 'bold'));
-        toolbar.appendChild(createBtn(toggleText('I', ITALIC_MAP, ITALIC_REVERSE), 'italic'));
-        toolbar.appendChild(createBtn(toggleCombining('U', COMBINING_UNDERLINE), 'underline'));
-        toolbar.appendChild(createBtn(toggleCombining('S', COMBINING_STRIKE), 'strike'));
+    toolbar.appendChild(createBtn('B', 'bold'));
+    toolbar.appendChild(createBtn('I', 'italic'));
+    toolbar.appendChild(createBtn('U', 'underline'));
+    toolbar.appendChild(createBtn('S', 'strike'));
 
-        wrapper.insertBefore(toolbar, editor);
+    wrapper.insertBefore(toolbar, editor);
+    console.log('[Linked Formatter] Toolbar injected');
+};
 
-        // Keyboard shortcuts
+const observer = new MutationObserver(() => {
+    const editor = document.querySelector('.ql-editor[contenteditable="true"]');
+    if (editor && !editor.closest('.linked-toolbar-wrapper')) {
+        injectToolbar(editor);
+
+        // Attach keybindings again
         editor.addEventListener('keydown', (e) => {
             const isMac = navigator.platform.toUpperCase().includes('MAC');
             const isMod = isMac ? e.metaKey : e.ctrlKey;
@@ -165,9 +165,10 @@
                 newRange.setStartAfter(editor.lastChild);
                 newRange.collapse(true);
                 selection.addRange(newRange);
-                editor.dispatchEvent(new Event('input', {bubbles: true}));
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
             }
         });
-    }, 500);
-})();
+    }
+});
 
+observer.observe(document.body, { childList: true, subtree: true });
