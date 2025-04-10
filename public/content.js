@@ -1,85 +1,131 @@
-const createMap = (offsetUpper, offsetLower) => {
-    const map = {};
-    for (let i = 65; i <= 90; i++) map[String.fromCharCode(i)] = String.fromCodePoint(offsetUpper + (i - 65));
-    for (let i = 97; i <= 122; i++) map[String.fromCharCode(i)] = String.fromCodePoint(offsetLower + (i - 97));
-    return map;
-};
-
-const invertMap = (map) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k]));
-
-const BOLD_MAP = createMap(0x1D400, 0x1D41A);
-const BOLD_REVERSE = invertMap(BOLD_MAP);
-const ITALIC_MAP = createMap(0x1D608, 0x1D622);
-const ITALIC_REVERSE = invertMap(ITALIC_MAP);
-
-const COMBINING_UNDERLINE = '\u035F';
-const COMBINING_STRIKE = '\u0336';
-
-// const underlineText = (str) =>
-//     str.split('').map(c => c + COMBINING_UNDERLINE).join('');
-// const strikethroughText = (str) =>
-//     str.split('').map(c => c + COMBINING_STRIKE).join('');
-
-const toggleText = (str, map, reverseMap) => {
-    const isFormatted = [...str].every(c => reverseMap[c] || c === ' ');
-    return [...str].map(c => (isFormatted ? reverseMap[c] : map[c]) || c).join('');
-};
-
-const toggleCombining = (str, marker) => {
-    const isApplied = str.includes(marker);
-    return isApplied
-        ? str.replaceAll(marker, '')
-        : str.split('').map(c => c + marker).join('');
-};
-
-const style = document.createElement('style');
-style.innerText = `
+(function () {
+    const style = document.createElement('style');
+    style.innerText = `
     .linked-toolbar-btn {
-    background-color: #e6e6e6;
-    color: #1b1b1b;
-    color: #6f6f6f;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-right: 5px;
-    width: 20px;
-    height: 20px;
+        background-color: #e6e6e6;
+        color: #6f6f6f;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 4px 10px;
+      font-size: 14px;
+      margin-right: 5px;
     }
     .linked-toolbar {
       position: absolute;
-      top: -10px;
-      left: 0;
+      bottom: 0;
+      right: 0;
       z-index: 9999;
       display: flex;
+      align-items: center;
       background: white;
       border: 1px solid #ccc;
       padding: 4px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
+    .linked-style-select {
+      font-size: 14px;
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
   `;
-document.head.appendChild(style);
+    document.head.appendChild(style);
 
-const injectToolbar = (editor) => {
-    if (editor.closest('.linked-toolbar-wrapper')) return; // Prevent duplicate injection
+    const applyFormatting = (text, variant, combinings = '') => {
+        try {
+            return toUnicodeVariant(text, variant, combinings);
+        } catch (e) {
+            console.error('Formatting error:', e);
+            return text;
+        }
+    };
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'linked-toolbar-wrapper';
-    wrapper.style.position = 'relative';
+    const injectToolbar = (holder, editor) => {
+        if (holder.closest('.linked-toolbar-wrapper')) return;
 
-    const parent = editor.parentElement;
-    parent.insertBefore(wrapper, editor);
-    wrapper.appendChild(editor);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'linked-toolbar-wrapper';
+        wrapper.style.position = 'relative';
 
-    const toolbar = document.createElement('div');
-    toolbar.className = 'linked-toolbar';
+        const parent = holder.parentElement;
+        parent.insertBefore(wrapper, holder);
+        wrapper.appendChild(holder);
 
-    const createBtn = (label, type) => {
-        const btn = document.createElement('button');
-        btn.className = 'linked-toolbar-btn';
-        btn.innerText = label;
-        btn.onclick = () => {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'linked-toolbar';
+
+        const formats = [
+            {label: 'B', variant: 'bold'},
+            {label: 'I', variant: 'italic'},
+            {label: 'U', variant: 'italic', combinings: 'underline'},
+            {label: 'S', variant: 'italic', combinings: 'strike'}
+        ];
+
+        formats.forEach(({label, variant, combinings}) => {
+            const btn = document.createElement('button');
+            btn.className = 'linked-toolbar-btn';
+            btn.innerText = label;
+            btn.onclick = () => {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+                const range = selection.getRangeAt(0);
+                if (!editor.contains(range.commonAncestorContainer)) return;
+                const selectedText = selection.toString();
+                if (!selectedText.trim()) return;
+
+                const styled = applyFormatting(selectedText, variant, combinings);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(styled));
+
+                selection.removeAllRanges();
+                const newRange = document.createRange();
+                newRange.setStartAfter(editor.lastChild);
+                newRange.collapse(true);
+                selection.addRange(newRange);
+
+                editor.dispatchEvent(new Event('input', {bubbles: true}));
+            };
+            toolbar.appendChild(btn);
+        });
+
+        // Add dropdown with variant styles
+        const dropdown = document.createElement('select');
+        dropdown.className = 'linked-style-select';
+
+        const variantOptions = {
+            'Sans': 'sans',
+            'Bold Sans': 'bold sans',
+            'Italic Sans': 'italic sans',
+            'Bold Italic Sans': 'bold italic sans',
+            'Fullwidth': 'fullwidth',
+            'Monospace': 'monospace',
+            'Bold': 'bold',
+            'Italic': 'italic',
+            'Bold Italic': 'bold italic',
+            'Script': 'script',
+            'Bold Script': 'bold script',
+            'Gothic': 'gothic',
+            'Bold Gothic': 'gothic bold',
+            'Double Struck': 'double'
+        };
+
+        const defaultOption = document.createElement('option');
+        defaultOption.innerText = '🎨 Select Style';
+        defaultOption.disabled = true;
+        defaultOption.selected = true;
+        dropdown.appendChild(defaultOption);
+
+        for (const [name, value] of Object.entries(variantOptions)) {
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.innerText = applyFormatting(name, value);
+            dropdown.appendChild(opt);
+        }
+
+        dropdown.onchange = () => {
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
             const range = selection.getRangeAt(0);
@@ -87,20 +133,11 @@ const injectToolbar = (editor) => {
             const selectedText = selection.toString();
             if (!selectedText.trim()) return;
 
-            let result = selectedText;
-            switch (type) {
-                case 'bold':
-                    result = toggleText(selectedText, BOLD_MAP, BOLD_REVERSE); break;
-                case 'italic':
-                    result = toggleText(selectedText, ITALIC_MAP, ITALIC_REVERSE); break;
-                case 'underline':
-                    result = toggleCombining(selectedText, COMBINING_UNDERLINE); break;
-                case 'strike':
-                    result = toggleCombining(selectedText, COMBINING_STRIKE); break;
-            }
-
+            const variant = dropdown.value;
+            const cleanText = reverseUnicodeVariant(selectedText)
+            const styled = applyFormatting(cleanText, variant);
             range.deleteContents();
-            range.insertNode(document.createTextNode(result));
+            range.insertNode(document.createTextNode(styled));
 
             selection.removeAllRanges();
             const newRange = document.createRange();
@@ -108,67 +145,62 @@ const injectToolbar = (editor) => {
             newRange.collapse(true);
             selection.addRange(newRange);
 
-            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            editor.dispatchEvent(new Event('input', {bubbles: true}));
+            dropdown.selectedIndex = 0;
         };
-        return btn;
+
+        toolbar.appendChild(dropdown);
+        wrapper.insertBefore(toolbar, holder);
     };
 
-    toolbar.appendChild(createBtn('B', 'bold'));
-    toolbar.appendChild(createBtn('I', 'italic'));
-    toolbar.appendChild(createBtn('U', 'underline'));
-    toolbar.appendChild(createBtn('S', 'strike'));
+    const observer = new MutationObserver(() => {
+        const header = document.getElementById('share-to-linkedin-modal__header');
 
-    wrapper.insertBefore(toolbar, editor);
-    console.log('[Linked Formatter] Toolbar injected');
-};
+        const editor = document.querySelector('.ql-editor[contenteditable="true"]');
+        if (editor && !editor.closest('.linked-toolbar-wrapper')) {
+            injectToolbar(header, editor);
+// === KEYBOARD SHORTCUTS ===
+            editor.addEventListener('keydown', (e) => {
+                const isMac = navigator.platform.toUpperCase().includes('MAC');
+                const isMod = isMac ? e.metaKey : e.ctrlKey;
+                const key = e.key.toLowerCase();
 
-const observer = new MutationObserver(() => {
-    const editor = document.querySelector('.ql-editor[contenteditable="true"]');
-    if (editor && !editor.closest('.linked-toolbar-wrapper')) {
-        injectToolbar(editor);
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+                const range = selection.getRangeAt(0);
+                if (!editor.contains(range.commonAncestorContainer)) return;
 
-        // Attach keybindings again
-        editor.addEventListener('keydown', (e) => {
-            const isMac = navigator.platform.toUpperCase().includes('MAC');
-            const isMod = isMac ? e.metaKey : e.ctrlKey;
-            const key = e.key.toLowerCase();
+                const selectedText = selection.toString();
+                if (!selectedText.trim()) return;
 
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-            const range = selection.getRangeAt(0);
-            if (!editor.contains(range.commonAncestorContainer)) return;
+                let styled = null;
 
-            const selectedText = selection.toString();
-            if (!selectedText.trim()) return;
+                if (isMod && key === 'b') {
+                    e.preventDefault();
+                    styled = applyFormatting(reverseUnicodeVariant(selectedText), 'bold');
+                } else if (isMod && key === 'i') {
+                    e.preventDefault();
+                    styled = applyFormatting(reverseUnicodeVariant(selectedText), 'italic');
+                } else if (isMod && key === 'u') {
+                    e.preventDefault();
+                    styled = applyFormatting(reverseUnicodeVariant(selectedText), 'italic', 'underline');
+                }
 
-            let result = null;
+                if (styled) {
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(styled));
+                    selection.removeAllRanges();
+                    const newRange = document.createRange();
+                    newRange.setStartAfter(editor.lastChild);
+                    newRange.collapse(true);
+                    selection.addRange(newRange);
+                    editor.dispatchEvent(new Event('input', {bubbles: true}));
+                }
+            });
+        }
+    });
 
-            if (isMod && key === 'b') {
-                e.preventDefault();
-                result = toggleText(selectedText, BOLD_MAP, BOLD_REVERSE);
-            } else if (isMod && key === 'i') {
-                e.preventDefault();
-                result = toggleText(selectedText, ITALIC_MAP, ITALIC_REVERSE);
-            } else if (isMod && key === 'u') {
-                e.preventDefault();
-                result = toggleCombining(selectedText, COMBINING_UNDERLINE);
-            } else if (isMod && e.shiftKey && key === 'x') {
-                e.preventDefault();
-                result = toggleCombining(selectedText, COMBINING_STRIKE);
-            }
+    observer.observe(document.body, {childList: true, subtree: true});
 
-            if (result !== null) {
-                range.deleteContents();
-                range.insertNode(document.createTextNode(result));
-                selection.removeAllRanges();
-                const newRange = document.createRange();
-                newRange.setStartAfter(editor.lastChild);
-                newRange.collapse(true);
-                selection.addRange(newRange);
-                editor.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        });
-    }
-});
-
-observer.observe(document.body, { childList: true, subtree: true });
+    console.log("[Linked Formatter] Toolbar + Dropdown ready 🚀");
+})();
